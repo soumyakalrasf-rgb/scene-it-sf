@@ -1,0 +1,233 @@
+Build a multiplayer "Director's Chase" game mode for Scene It SF. This is a city-wide hide-and-seek game where one player (the Director) hides at a real SF filming location and other players race to find them using progressively revealed movie clues.
+
+## TECH STACK
+- Use the existing app framework already in Replit
+- Add a real-time backend using Replit's built-in database (or Firebase Realtime DB if available)
+- WebSocket or polling (every 3 seconds) for real-time game state updates
+- All game state stored server-side so multiple devices stay in sync
+
+## DATABASE SCHEMA
+
+Game object:
+{
+  gameId: "ABCD",           // 4-character uppercase code
+  status: "lobby" | "active" | "reveal" | "ended",
+  directorId: "player_uuid",
+  directorName: "Soumya",
+  location: {               // The filming location the Director chose or was assigned
+    title: "Bullitt",
+    year: 1968,
+    loc: "Taylor St, Russian Hill",
+    lat: 37.7985,
+    lng: -122.4127,
+    hood: "Russian Hill",
+    cast: ["Steve McQueen"],
+    dir: "Peter Yates",
+    fact: "Chase took 3 weeks to film. Green VW Bug is a famous continuity error.",
+    permit: "$45,000"
+  },
+  teams: [
+    {
+      teamId: "team_uuid",
+      name: "Team McQueen",
+      members: ["Alice", "Bob"],
+      guesses: [
+        { lat: 37.80, lng: -122.41, timestamp: 1708000000, correct: false, locationName: "Fisherman's Wharf" }
+      ],
+      score: 0,
+      foundAt: null   // timestamp when they found the Director, or null
+    }
+  ],
+  rounds: {
+    current: 1,        // 1-4
+    startedAt: 1708000000,
+    roundDurations: [180, 180, 180, 300]  // seconds per round: 3min, 3min, 3min, 5min
+  },
+  createdAt: 1708000000,
+  settings: {
+    maxTeams: 8,
+    allowRandomLocation: true
+  }
+}
+
+## GAME FLOW — SCREEN BY SCREEN
+
+### Screen 1: Game Mode Selection (Home)
+- Add a prominent button on the app's home/explore screen:
+  "🎬 Director's Chase" with subtitle "City-wide movie hide & seek"
+- Style it with a pulsing gold border animation to draw attention
+- Below it, a smaller "Join a Game" button with a text input for entering a 4-digit code
+- Below that, a "How to Play" expandable section with rules
+
+### Screen 2: Create Game (Director Flow)
+When someone taps "Director's Chase":
+- Ask: "Be the Director or Join a Team?"
+- If DIRECTOR:
+  - Generate a random 4-digit game code (uppercase letters, e.g., "HKXM")
+  - Show the code LARGE (72px+) with a "Share Code" button that copies to clipboard
+  - Show two options:
+    A) "Choose My Location" — show a scrollable list of all filming locations from the database, each showing movie title, year, and address. Director taps one.
+    B) "Surprise Me" — randomly assigns a location. Show a slot-machine-style animation cycling through movie posters/titles before landing on one.
+  - After choosing: show a confirmation card with the location details and a map pin
+  - Show connected teams updating in real-time as people join
+  - Big "START THE CHASE" button (disabled until at least 1 team has joined)
+  - The Director's screen also shows: "Go to [location name] and wait for teams to find you!"
+
+### Screen 3: Join Game (Team Flow)  
+When someone taps "Join a Game":
+- Input field for the 4-digit game code
+- After entering valid code:
+  - Ask for Team Name (suggest fun defaults: "Team McQueen", "Hitchcock's Birds", "The Wachowskis", "Cage's Chasers", etc.)
+  - Ask for player names (1-3 text inputs, at least 1 required)
+  - "Join the Chase" button
+- After joining:
+  - Show lobby screen: "Waiting for the Director to start..."
+  - Show list of all teams currently in the lobby
+  - Show the game code so they can share with friends
+  - Pulsing "🎬" animation while waiting
+
+### Screen 4: Active Game — Director View
+Once Director hits "START THE CHASE":
+- Show a fullscreen dashboard:
+  - Top: big countdown timer for the current round (e.g., "2:47 remaining")
+  - Current round indicator: "ROUND 1 of 4"
+  - What teams currently know: "Teams can see: NEIGHBORHOOD ONLY"
+  - Below: live feed of team activity:
+    - "Team McQueen checked Fisherman's Wharf — ❌ Wrong!"
+    - "The Wachowskis checked North Beach — ❌ Getting warmer..."  
+    - "Cage's Chasers checked Taylor St — 🎬 FOUND YOU!"
+  - Bottom: map showing team guess locations as colored dots
+  - The Director does NOT see team locations in real-time (no GPS tracking — the game is based on clue-solving, not GPS)
+
+### Screen 5: Active Game — Team View
+Teams see a clue-based interface that reveals more info each round:
+
+**ROUND 1 (0:00-3:00): Neighborhood Only**
+- Large text: "The Director is hiding in..."
+- Animated reveal: "🎬 RUSSIAN HILL"
+- Below: a map of SF with ONLY the neighborhood highlighted (shade the neighborhood area in gold)
+- Text: "That's all you get. Start moving."
+- A "We're Here!" button (see Guess Mechanic below)
+
+**ROUND 2 (3:00-6:00): Movie + Year**
+- Everything from Round 1 PLUS:
+- Dramatic reveal animation (film reel spinning, then stopping):
+  "The movie is... BULLITT (1968)"
+- New clue card appears with movie title, year, director name
+- No location details yet
+
+**ROUND 3 (6:00-9:00): Fun Fact + Cast**  
+- Everything from Round 1-2 PLUS:
+- "CLUE UNLOCKED" flash animation
+- Show: cast names, the fun fact from the database
+- e.g., "Stars Steve McQueen. Chase took 3 weeks to film. Green VW Bug = continuity error."
+- Smart players will now recognize the specific location
+
+**ROUND 4 (9:00-14:00): Full Location Revealed**
+- Everything PLUS the exact address and a zoomed-in map pin
+- "The Director is at: Taylor St, Russian Hill"
+- "This is your last chance. 5 minutes remaining."
+
+### GUESS MECHANIC
+- On the team screen, there's always a "📍 We're Here!" button
+- When tapped, it asks: "What location are you checking?" and shows a searchable list of all filming locations in the database filtered to nearby neighborhoods
+- OR they can tap a location directly on the map
+- Team submits their guess
+- If WRONG: 
+  - Screen flashes red
+  - Show: "❌ WRONG LOCATION" 
+  - Fun penalty text: "Steve McQueen is shaking his head. Move on."
+  - The wrong location gets crossed out on their map so they don't guess it again
+  - -5 points penalty per wrong guess
+- If CORRECT:
+  - Screen explodes with gold confetti animation
+  - "🎬 YOU FOUND THE DIRECTOR!"
+  - Show their score based on which round they found them in
+  - Camera opens for the "Scene Recreation" photo (see below)
+  - All other teams get notified: "Team McQueen found the Director!"
+
+### SCORING
+- Found in Round 1: 100 points
+- Found in Round 2: 75 points
+- Found in Round 3: 50 points
+- Found in Round 4: 25 points
+- Each wrong guess: -5 points
+- Scene recreation photo bonus: +20 points (awarded by Director)
+- First to find: +15 bonus points
+
+### Screen 6: Scene Recreation Photo
+When a team finds the Director:
+- Prompt: "📸 Recreate the scene!"
+- Show the movie name and a brief scene description as a prompt:
+  e.g., "Recreate the Bullitt car chase look: intense stare, hands on invisible steering wheel"
+- Open camera for a photo
+- After taking: show the photo with a gold film-frame border overlay
+- "Submit to Director" button — photo appears on Director's screen for bonus point approval
+- "Skip" option if they don't want to take a photo
+
+### Screen 7: Game Over / Results
+When the timer runs out OR all teams have found the Director:
+
+**RESULTS SCREEN (shown to everyone):**
+- "🎬 THAT'S A WRAP" title with clapboard animation
+- Leaderboard showing all teams ranked by score:
+  1. 🥇 Team McQueen — 95 pts (Found in Round 1, 1 wrong guess)
+  2. 🥈 The Wachowskis — 70 pts (Found in Round 2, 1 wrong guess)
+  3. 🥉 Cage's Chasers — 45 pts (Found in Round 3, 1 wrong guess)
+  4. Hitchcock's Birds — 0 pts (Never found the Director 😭)
+
+- The location reveal card: show full details of where the Director was hiding, with all the movie facts, permit cost, fun fact
+
+- "Chase Report" shareable card (see below)
+
+- "Play Again" button (rotates Director to the winning team's first member)
+
+### Screen 8: Shareable Chase Report Card
+Generate an image-like card (CSS, not actual image generation) sized for Instagram Stories (9:16 aspect ratio, roughly 375x667px on mobile). Content:
+
+Top: "SCENE IT SF — DIRECTOR'S CHASE" in gold Playfair Display
+Middle:
+- Movie poster placeholder (gold bordered rectangle with movie title + year in large text)
+- "We found the Director at [location]"
+- A minimap showing the path of guesses (dots connected by lines) — wrong guesses in red, correct in gold
+- Stats block:
+  - "Guesses: 3" 
+  - "Time: 4m 22s"
+  - "Score: 95"
+- The speed roast comparison:
+  - Calculate their average speed: distance from start to correct location / time taken
+  - Compare to the movie's impossible speed from the audits data:
+    "You traveled 1.2 miles in 4 minutes = 18 mph"
+    "In Bullitt, McQueen covered 3.8 miles in 2 seconds = 6,840 mph"
+    "McQueen was 380x faster than you."
+  - If the movie isn't in the audits data, compare to a generic:
+    "Mrs. Doubtfire ran faster. In heels. In a latex mask."
+- Scene recreation photo (if taken) with film-frame border
+
+Bottom:
+- "sceneitsf.com" + QR code placeholder area
+- "Made with Scene It SF — Every scene, every spot, only San Francisco"
+
+IMPORTANT: Add a "📤 Share" button that uses the Web Share API (navigator.share) if available, falling back to "Copy Link" on desktop. The share should include the text: "I found the Director at [movie title] in [time]! 🎬 Play Director's Chase on Scene It SF [link]"
+
+## VISUAL DESIGN
+- Keep the existing app's dark noir aesthetic (dark background, gold accents, Playfair Display headings)
+- Round transitions should feel cinematic: fade to black, then fade in with the new clue
+- Wrong guesses: quick red flash + screen shake (CSS animation, 0.3s)
+- Correct guess: gold confetti explosion (CSS particles, no library needed — use ~30 small gold squares with random animation-delay and animation-duration falling down the screen)
+- Timer under 30 seconds: text turns red and pulses
+- Use the camera icon (🎥) for the Director and the magnifying glass (🔍) for teams throughout
+
+## EDGE CASES TO HANDLE
+- Director disconnects: show "Director disconnected" to all teams, pause timer, auto-resume if they reconnect within 60 seconds, otherwise end game
+- Team disconnects: grey out their name in the lobby, they can rejoin with the same code
+- All teams found the Director before timer ends: immediately go to results screen
+- No teams found the Director: results screen shows "The Director got away! 🎬" and the Director gets a special badge
+- Game code collision: regenerate if code already exists in active games
+- Stale games: auto-delete games that have been in "lobby" status for more than 30 minutes
+
+## IMPORTANT NOTES
+- This is NOT a GPS tracking game. Teams figure out locations from clues, not from tracking. This keeps it privacy-friendly and makes the trivia knowledge matter.
+- The Director physically goes to the location. The teams physically move through the city. The app is the clue/scoring system, not a GPS tracker.
+- Mobile-first design. This will be played on phones while walking around SF.
+- All game state changes should update for all connected clients within 3 seconds.

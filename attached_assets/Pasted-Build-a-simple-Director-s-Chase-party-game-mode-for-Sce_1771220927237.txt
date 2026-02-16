@@ -1,0 +1,45 @@
+Build a simple "Director's Chase" party game mode for Scene It SF.
+
+## HOW IT WORKS
+1. One person opens the app and taps "Director's Chase"
+2. They get a random filming location (or pick one) — e.g., "Bullitt — Taylor St, Russian Hill"
+3. They physically go to that location
+4. When they arrive, they tap "I'm Here — Start the Chase"
+5. The app generates a SHAREABLE CLUE LINK (simple URL, no app install needed for friends)
+6. Director texts the link to friends
+7. Friends open the link on their phones and see a simple countdown page that reveals clues in stages:
+   - Immediately: just the neighborhood (e.g., "The Director is somewhere in Russian Hill")
+   - After 3 min: the movie title + year ("Bullitt, 1968")
+   - After 6 min: the fun fact ("Famous for a car chase with a green VW Bug continuity error")
+   - After 10 min: the exact address ("Taylor St, Russian Hill")
+8. Friends race to find the Director. First one there wins.
+
+## WHAT TO BUILD
+
+### Director Screen (in the app):
+- Big "🎬 Start a Chase" button
+- Location picker: show 3 random filming locations as cards (movie title, neighborhood, one-line teaser). Director picks one. Option to reshuffle for 3 new ones.
+- After picking: show the full location details + directions
+- "I'm Here — Start Chase" button
+- This generates a unique URL like: sceneitsf.com/chase/ABCD (or your replit URL + /chase/ABCD)
+- Show a "Share Link" button that opens the native share sheet (or copies link)
+- Also show a large QR code for the link (for in-person sharing)
+- Director's screen then shows a live timer and what clue level the chasers currently see
+
+### Chaser Page (just a web page, no app needed):
+- Simple mobile-friendly page that anyone can open from the link
+- Shows the Scene It SF branding at top
+- Shows a countdown timer
+- Shows the currently revealed clues (updating automatically with JavaScript timers — no backend needed, just calculate from the start timestamp encoded in the URL)
+- Each new clue reveal has a brief animation (fade in + slight slide up)
+- At the bottom: "When you find the Director, yell CUT! 🎬"
+
+### Post-Game Share Card:
+After the chase (Director taps "End Chase"), show a shareable results screen:
+- Movie title + year in large gold text
+- The location
+- "Chase lasted: X minutes"
+- A fun speed comparison line:
+  - Pull from the audits data if the movie is Bullitt, Ant-Man, The Rock, or Venom
+  - e.g., "In Bullitt, McQueen covered this in 2 seconds. Your friends needed 7 minutes."
+  - For other movies, use a generic: "It took [X] minutes to find the Director. Mrs.

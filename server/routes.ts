@@ -51,6 +51,88 @@ export async function registerRoutes(
     }
   });
 
+  app.post("/api/chases", async (req, res) => {
+    try {
+      const { locationId } = req.body;
+      if (!locationId) return res.status(400).json({ error: "locationId required" });
+
+      let code: string;
+      let attempts = 0;
+      do {
+        code = Array.from({ length: 4 }, () =>
+          "ABCDEFGHJKLMNPQRSTUVWXYZ"[Math.floor(Math.random() * 24)]
+        ).join("");
+        const existing = await storage.getChaseByCode(code);
+        if (!existing) break;
+        attempts++;
+      } while (attempts < 20);
+
+      const chase = await storage.createChase({
+        code,
+        locationId: parseInt(locationId, 10),
+        status: "waiting",
+        startedAt: null,
+        endedAt: null,
+        createdAt: Date.now(),
+      });
+      const full = await storage.getChaseByCode(chase.code);
+      res.json(full);
+    } catch (err) {
+      console.error("Error creating chase:", err);
+      res.status(500).json({ error: "Failed to create chase" });
+    }
+  });
+
+  app.get("/api/chases/:code", async (req, res) => {
+    try {
+      const code = req.params.code.toUpperCase();
+      const chase = await storage.getChaseByCode(code);
+      if (!chase) return res.status(404).json({ error: "Chase not found" });
+      res.json(chase);
+    } catch (err) {
+      console.error("Error fetching chase:", err);
+      res.status(500).json({ error: "Failed to fetch chase" });
+    }
+  });
+
+  app.patch("/api/chases/:code/start", async (req, res) => {
+    try {
+      const code = req.params.code.toUpperCase();
+      const chase = await storage.updateChaseStatus(code, "active", Date.now());
+      if (!chase) return res.status(404).json({ error: "Chase not found" });
+      const full = await storage.getChaseByCode(code);
+      res.json(full);
+    } catch (err) {
+      console.error("Error starting chase:", err);
+      res.status(500).json({ error: "Failed to start chase" });
+    }
+  });
+
+  app.patch("/api/chases/:code/end", async (req, res) => {
+    try {
+      const code = req.params.code.toUpperCase();
+      const chase = await storage.updateChaseStatus(code, "ended", undefined, Date.now());
+      if (!chase) return res.status(404).json({ error: "Chase not found" });
+      const full = await storage.getChaseByCode(code);
+      res.json(full);
+    } catch (err) {
+      console.error("Error ending chase:", err);
+      res.status(500).json({ error: "Failed to end chase" });
+    }
+  });
+
+  app.get("/api/locations/random", async (req, res) => {
+    try {
+      const locs = await storage.getLocationsWithFilms();
+      const count = parseInt(req.query.count as string) || 3;
+      const shuffled = locs.sort(() => Math.random() - 0.5).slice(0, count);
+      res.json(shuffled);
+    } catch (err) {
+      console.error("Error fetching random locations:", err);
+      res.status(500).json({ error: "Failed to fetch random locations" });
+    }
+  });
+
   app.get("/api/tmdb/movie/:tmdbId", async (req, res) => {
     try {
       const apiKey = process.env.TMDB_API_KEY;

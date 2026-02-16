@@ -1,23 +1,27 @@
 import { useState, useMemo, useCallback } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Menu, Sun, Moon } from "lucide-react";
+import { useLocation } from "wouter";
+import { Menu, Sun, Moon, Search as SearchIcon, Clapperboard } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import MapView from "@/components/MapView";
 import FilmSidebar from "@/components/FilmSidebar";
 import NeighborhoodFilter from "@/components/NeighborhoodFilter";
 import LocationDetail from "@/components/LocationDetail";
 import StatsBar from "@/components/StatsBar";
+import GeographicAudits from "@/components/GeographicAudits";
 import { useTheme } from "@/hooks/use-theme";
 import { NEIGHBORHOODS } from "@/lib/constants";
 import type { Film, LocationWithFilm } from "@shared/schema";
 
 export default function Home() {
+  const [, navigate] = useLocation();
   const { theme, toggleTheme } = useTheme();
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [selectedFilmId, setSelectedFilmId] = useState<number | null>(null);
   const [selectedNeighborhood, setSelectedNeighborhood] = useState("All");
   const [selectedLocation, setSelectedLocation] = useState<LocationWithFilm | null>(null);
   const [flyTo, setFlyTo] = useState<[number, number] | null>(null);
+  const [auditsOpen, setAuditsOpen] = useState(false);
 
   const { data: films = [], isLoading: filmsLoading } = useQuery<Film[]>({
     queryKey: ["/api/films"],
@@ -116,7 +120,26 @@ export default function Home() {
         </div>
       )}
 
-      <div className="fixed top-4 right-4 z-[999]">
+      <div className="fixed top-4 right-4 z-[999] flex items-center gap-2">
+        <Button
+          size="sm"
+          onClick={() => navigate("/chase/new")}
+          className="bg-primary/90 backdrop-blur-xl border border-primary/50 shadow-lg animate-pulse-subtle"
+          data-testid="button-directors-chase"
+        >
+          <Clapperboard className="w-4 h-4 mr-1" />
+          Director's Chase
+        </Button>
+        <Button
+          size="sm"
+          variant="secondary"
+          onClick={() => setAuditsOpen(true)}
+          className="bg-card/90 backdrop-blur-xl border border-border/50 shadow-lg"
+          data-testid="button-open-audits"
+        >
+          <SearchIcon className="w-4 h-4 mr-1" />
+          Audits
+        </Button>
         <Button
           size="icon"
           variant="secondary"
@@ -149,6 +172,11 @@ export default function Home() {
         locationCount={locations.length}
         neighborhoodCount={uniqueNeighborhoods}
         yearRange={yearRange}
+      />
+
+      <GeographicAudits
+        isOpen={auditsOpen}
+        onClose={() => setAuditsOpen(false)}
       />
     </div>
   );

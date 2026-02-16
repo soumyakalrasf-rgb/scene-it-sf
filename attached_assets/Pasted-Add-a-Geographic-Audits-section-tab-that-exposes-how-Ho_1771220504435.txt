@@ -1,0 +1,30 @@
+Add a "Geographic Audits" section/tab that exposes how Hollywood gets SF geography wrong. Use this data for the audits:
+
+AUDIT DATA:
+- Bullitt (1968): 4 impossible cuts
+  1. Potrero Hill → North Beach: 3.8 mi in 2 sec = 6,840 MPH. "McQueen teleports in a single cut."
+  2. Russian Hill → Marina: 0.7 mi in 1 sec = 2,520 MPH. "Charger leaps 6 blocks across Van Ness."
+  3. Marina Blvd → Visitacion Valley: 8.2 mi in 3 sec = 9,840 MPH. "Same Safeway appears twice, then 8 miles south."
+  4. Visitacion Valley → Daly City: 3.1 mi in 2 sec = 5,580 MPH. "Finale outside city limits entirely."
+
+- Ant-Man & the Wasp (2018): 2 impossible cuts
+  1. Lombard St → Embarcadero: 2.1 mi in 3 sec = 2,520 MPH. "Turns on Lombard, instantly at Embarcadero."
+  2. Fisherman's Wharf → Twin Peaks: 4.5 mi in 4 sec = 4,050 MPH. "Through completely unconnected neighborhoods."
+
+- The Rock (1996): 2 impossible cuts
+  1. Nob Hill → Marina Green: 2.8 mi in 5 sec = 2,016 MPH. "Hills flattened out of respect for the Humvee."
+  2. Embarcadero → Wharf via downtown: 1.5 mi in 2 sec = 2,700 MPH. "Cable car requires 3+ transfers."
+
+- Venom (2018): 1 impossible cut
+  1. Edinburgh Castle bar → Embarcadero: 2.4 mi in 4 sec = 2,160 MPH. "Tenderloin to waterfront in seconds."
+
+VISUAL REQUIREMENTS:
+- Show each movie as an expandable card
+- For each "impossible cut", show a speed comparison visual:
+  - Under 3,000 MPH: show a rocket emoji/icon with "Faster than a fighter jet"
+  - 3,000-6,000 MPH: show a wormhole/portal animation (spinning vortex CSS animation) with "Wormhole required"
+  - Over 6,000 MPH: show a full-screen glitch effect or screen-shake animation with "BROKE THE SPACE-TIME CONTINUUM" in red
+- Display the calculated MPH in a large, dramatic font
+- Show a mini progress bar comparing the speed to: walking (3 mph), driving (35 mph), bullet train (200 mph), speed of sound (767 mph), and the calculated impossible speed
+- Summary stats at top: total teleportations across all movies, peak MPH (9,840 from Bullitt)
+- The tone should be funny and roast-like, not academic
