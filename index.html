@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Scene It SF</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,900;1,700&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--bg:#07080c;--fg:#e8e4dc;--card:rgba(14,15,20,0.92);--cs:#0e0f14;--gd:#c8a44a;--rd:#d44a3a;--bdr:rgba(200,164,74,0.12);--dim:rgba(232,228,220,0.4);--mt:rgba(232,228,220,0.2);--fd:'Playfair Display',Georgia,serif;--fb:'DM Sans',system-ui,sans-serif}
+html,body{height:100%;overflow:hidden}
+body{background:var(--bg);color:var(--fg);font-family:var(--fb);-webkit-font-smoothing:antialiased}
+body::after{content:'';position:fixed;inset:0;opacity:.035;pointer-events:none;z-index:10000;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")}
+.app{display:flex;flex-direction:column;height:100vh}
+.hdr{padding:1rem 1.5rem .6rem;text-align:center;flex-shrink:0;position:relative}.hdr::after{content:'';position:absolute;bottom:0;left:5%;right:5%;height:1px;background:linear-gradient(90deg,transparent,var(--bdr),transparent)}
+.logo{font-family:var(--fd);font-weight:900;font-size:2rem;letter-spacing:-.02em}.logo em{color:var(--gd);font-style:italic}
+.tag{font-size:.65rem;color:var(--dim);margin-top:.25rem;letter-spacing:.2em;text-transform:uppercase;font-weight:300}
+.srow{display:flex;justify-content:center;gap:1.5rem;padding:.5rem 1rem;flex-shrink:0}
+.st{text-align:center}.sn{font-family:var(--fd);font-size:1.15rem;color:var(--gd);font-weight:700}.sl{font-size:.45rem;color:var(--dim);text-transform:uppercase;letter-spacing:.15em;margin-top:.05rem}
+.tabs{display:flex;gap:1px;padding:.4rem 1rem;flex-shrink:0}
+.tb{flex:1;padding:.5rem .2rem;background:var(--card);border:1px solid var(--bdr);color:var(--dim);font-family:var(--fb);font-size:.55rem;font-weight:500;cursor:pointer;text-align:center;text-transform:uppercase;letter-spacing:.06em;transition:all .25s}
+.tb:first-child{border-radius:6px 0 0 6px}.tb:last-child{border-radius:0 6px 6px 0}
+.tb.on{background:var(--gd);color:var(--bg);font-weight:700;border-color:var(--gd)}.tb:hover:not(.on){color:var(--fg);border-color:var(--gd)}
+.W{flex:1;overflow-y:auto;overflow-x:hidden;padding:.6rem 1rem 2rem;scrollbar-width:thin;scrollbar-color:var(--bdr) transparent}.W::-webkit-scrollbar{width:4px}.W::-webkit-scrollbar-thumb{background:var(--bdr);border-radius:2px}
+.sr{position:relative;margin-bottom:.4rem}.sr input{width:100%;padding:.6rem .8rem .6rem 2rem;background:var(--card);border:1px solid var(--bdr);border-radius:8px;color:var(--fg);font-family:var(--fb);font-size:.75rem;outline:none;transition:border-color .3s}.sr input:focus{border-color:var(--gd)}.sr input::placeholder{color:var(--mt)}.sr::before{content:'\1F50D';position:absolute;left:.6rem;top:50%;transform:translateY(-50%);font-size:.65rem;pointer-events:none;opacity:.5}
+.chips{display:flex;gap:4px;overflow-x:auto;padding-bottom:.4rem;scrollbar-width:none}.chips::-webkit-scrollbar{display:none}
+.ch{flex-shrink:0;padding:.2rem .55rem;border-radius:20px;border:1px solid var(--bdr);background:transparent;color:var(--dim);font-family:var(--fb);font-size:.55rem;cursor:pointer;transition:all .2s;white-space:nowrap}.ch:hover{border-color:var(--gd);color:var(--fg)}.ch.on{background:var(--gd);color:var(--bg);border-color:var(--gd);font-weight:600}
+#mapBox{width:100%;height:380px;border-radius:12px;overflow:hidden;border:1px solid var(--bdr);margin:.5rem 0}
+.leaflet-container{background:#080a10!important}
+.leaflet-tile-pane{filter:brightness(.55) contrast(1.3) saturate(.15) sepia(.15) hue-rotate(10deg)}
+.leaflet-control-zoom{border:none!important}.leaflet-control-zoom a{background:var(--cs)!important;color:var(--gd)!important;border:1px solid var(--bdr)!important;width:28px!important;height:28px!important;line-height:28px!important}
+.leaflet-control-attribution{display:none!important}
+.leaflet-popup-content-wrapper{background:var(--cs)!important;color:var(--fg)!important;border-radius:10px!important;border:1px solid rgba(200,164,74,.25)!important;box-shadow:0 12px 40px rgba(0,0,0,.6)!important;padding:0!important;font-family:var(--fb)!important}
+.leaflet-popup-content{margin:0!important;min-width:220px!important;max-width:270px!important}
+.leaflet-popup-tip{background:var(--cs)!important}.leaflet-popup-close-button{color:var(--dim)!important;font-size:18px!important;padding:6px 8px!important}
+.lt{display:flex;align-items:center;gap:.5rem;padding:.45rem .7rem;margin-bottom:.5rem;background:var(--card);border:1px solid var(--bdr);border-radius:8px;cursor:pointer;transition:all .3s}.lt.on{border-color:var(--rd)}
+.ld{width:8px;height:8px;border-radius:50%;background:var(--mt);flex-shrink:0;transition:all .3s}.lt.on .ld{background:var(--rd);box-shadow:0 0 8px rgba(212,74,58,.6);animation:pu 1.5s ease-in-out infinite}
+@keyframes pu{0%,100%{box-shadow:0 0 4px rgba(212,74,58,.3)}50%{box-shadow:0 0 12px rgba(212,74,58,.7)}}
+.ltx{font-size:.65rem;color:var(--dim)}.lt.on .ltx{color:var(--rd);font-weight:600}.lts{font-size:.52rem;color:var(--mt);margin-top:.05rem}.lt.on .lts{color:var(--dim)}
+.lb{background:rgba(212,74,58,.06);border:1px solid rgba(212,74,58,.2);border-radius:8px;padding:.65rem;margin-bottom:.5rem}.lb h4{font-family:var(--fd);font-size:.8rem;color:var(--rd)}.lb p{font-size:.6rem;color:var(--dim);margin-top:.15rem;line-height:1.5}
+.lbg{display:inline-block;font-size:.42rem;color:#fff;background:var(--rd);padding:.08rem .3rem;border-radius:6px;text-transform:uppercase;letter-spacing:.12em;font-weight:700;margin-bottom:.2rem}
+.pop{padding:.8rem .9rem}.pt{font-family:var(--fd);font-size:1.05rem;font-weight:700;line-height:1.15;padding-right:1.5rem}.py{color:var(--gd);font-size:.7rem;opacity:.7;margin-left:.2rem}
+.pl{font-size:.65rem;color:var(--gd);margin-top:.2rem}.pc{font-size:.6rem;color:var(--dim);margin-top:.15rem}
+.pf{font-size:.6rem;color:rgba(232,228,220,.6);margin-top:.35rem;padding:.35rem .5rem;background:rgba(200,164,74,.05);border-left:2px solid var(--gd);border-radius:0 4px 4px 0;font-style:italic;line-height:1.4}
+.pp{font-size:.55rem;color:var(--gd);margin-top:.3rem;padding:.25rem .45rem;background:rgba(200,164,74,.06);border-radius:5px}
+.pe{font-size:.55rem;color:var(--dim);margin-top:.25rem;padding:.25rem .45rem;border:1px dashed var(--bdr);border-radius:5px}
+.ph{display:inline-block;margin-top:.25rem;font-size:.45rem;color:var(--dim);background:rgba(255,255,255,.04);padding:.1rem .4rem;border-radius:10px;text-transform:uppercase;letter-spacing:.1em}
+.svr{margin-top:.45rem;border-radius:6px;overflow:hidden;position:relative;height:90px;border:1px solid var(--bdr);cursor:col-resize;touch-action:none}
+.svs{position:absolute;top:0;bottom:0;overflow:hidden;display:flex;align-items:center;justify-content:center}
+.svl{left:0;background:linear-gradient(135deg,rgba(200,164,74,.1),rgba(200,164,74,.03));z-index:1}.svr2{right:0;left:0;background:rgba(255,255,255,.02)}
+.svlb{position:absolute;top:4px;font-size:.42rem;text-transform:uppercase;letter-spacing:.15em;padding:.08rem .3rem;border-radius:8px;font-weight:600;z-index:3}
+.svl .svlb{left:4px;background:rgba(200,164,74,.15);color:var(--gd)}.svr2 .svlb{right:4px;background:rgba(255,255,255,.06);color:var(--dim)}
+.svtx{font-family:var(--fd);font-size:.65rem;color:var(--mt);text-align:center;padding:0 .8rem;font-style:italic}.svl .svtx{color:var(--gd);opacity:.5}
+.svd{position:absolute;top:0;bottom:0;width:2px;background:var(--gd);z-index:5;transform:translateX(-50%)}
+.svd::after{content:'\27E8\27E9';position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:18px;height:18px;background:var(--gd);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.4rem;color:var(--bg);font-weight:700}
+.btn{width:100%;padding:.55rem;margin-bottom:.4rem;border:none;border-radius:8px;color:#fff;font-family:var(--fd);font-size:.85rem;font-weight:700;cursor:pointer;transition:all .25s}.btn:hover{transform:translateY(-1px)}.btn:active{transform:translateY(0)}
+.br{background:linear-gradient(135deg,var(--rd),#a82a20);box-shadow:0 4px 16px rgba(212,74,58,.25)}
+.bg{background:linear-gradient(135deg,var(--gd),#a8862a);box-shadow:0 4px 12px rgba(200,164,74,.2)}
+.bo{background:transparent;border:1px solid var(--gd)!important;color:var(--gd)}
+.cnt{font-size:.52rem;color:var(--dim);text-align:center;margin-top:.15rem}
+.sc{font-family:var(--fd);font-size:1rem;font-weight:700;margin:.8rem 0 .35rem}.ss{font-size:.62rem;color:var(--dim);margin-bottom:.6rem;line-height:1.5}
+.ac{background:var(--card);border:1px solid var(--bdr);border-radius:10px;overflow:hidden;margin-bottom:.6rem}
+.aH{padding:.75rem;cursor:pointer;transition:background .2s}.aH:hover{background:rgba(255,255,255,.02)}
+.aM{font-family:var(--fd);font-size:.95rem;font-weight:700}.aY{color:var(--gd);font-size:.65rem;margin-left:.2rem;opacity:.7}
+.aTag{font-size:.62rem;color:var(--dim);font-style:italic;margin-top:.1rem}
+.aBg{display:inline-block;font-size:.45rem;color:var(--rd);background:rgba(212,74,58,.08);padding:.1rem .35rem;border-radius:8px;text-transform:uppercase;letter-spacing:.08em;font-weight:600;margin-top:.15rem}
+.aB{display:none;padding:0 .75rem .75rem;border-top:1px solid var(--bdr)}.ac.open .aB{display:block}
+.aS{padding:.45rem 0;border-bottom:1px solid rgba(255,255,255,.03)}.aS:last-child{border-bottom:none}
+.aR{font-size:.68rem;line-height:1.4}.aR strong{color:var(--gd)}
+.aX{background:rgba(212,74,58,.05);border:1px solid rgba(212,74,58,.12);border-radius:8px;padding:.55rem;margin-top:.3rem}
+.aX h4{font-family:var(--fd);font-size:.7rem;color:var(--rd)}.aX p{font-size:.6rem;color:var(--dim);margin-top:.1rem;line-height:1.4}
+.aXn{font-family:var(--fd);font-size:1.6rem;color:var(--rd);font-weight:900;line-height:1;margin:.1rem 0}
+.aXl{font-size:.48rem;color:var(--dim);text-transform:uppercase;letter-spacing:.1em}
+.wc{background:var(--card);border:1px solid var(--bdr);border-radius:10px;padding:.9rem;margin-bottom:.6rem;cursor:pointer;transition:all .25s}.wc:hover{border-color:var(--gd);transform:translateY(-1px)}
+.we{font-size:1.5rem;margin-bottom:.3rem}.wt{font-family:var(--fd);font-size:1rem;font-weight:700}.wd{font-size:.65rem;color:var(--dim);margin-top:.15rem;line-height:1.4}
+.wm{display:flex;gap:.7rem;margin-top:.3rem;font-size:.52rem;color:var(--dim);text-transform:uppercase;letter-spacing:.08em}
+.wj{font-size:.62rem;color:var(--rd);margin-top:.3rem;padding:.3rem .5rem;background:rgba(212,74,58,.05);border-radius:6px;font-style:italic;line-height:1.4}
+.wS{margin-top:.5rem;padding-top:.4rem;border-top:1px solid var(--bdr);display:none}.wc.open .wS{display:block}
+.ws{display:flex;gap:.5rem;padding:.3rem 0;align-items:flex-start}
+.wn{width:1.1rem;height:1.1rem;border-radius:50%;background:var(--gd);color:var(--bg);font-family:var(--fd);font-size:.55rem;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.wMv{font-weight:600;font-size:.65rem}.wLc{font-size:.58rem;color:var(--gd);opacity:.7;margin-top:.02rem}
+.aib{background:var(--card);border:1px solid var(--bdr);border-radius:10px;padding:.85rem;margin-bottom:.6rem}
+.ait{font-family:var(--fd);font-size:.82rem;font-weight:700;color:var(--gd);margin-bottom:.2rem}.aid{font-size:.62rem;color:var(--dim);margin-bottom:.4rem}
+.ata{width:100%;height:60px;background:rgba(255,255,255,.03);border:1px solid var(--bdr);border-radius:6px;color:var(--fg);font-family:var(--fb);font-size:.7rem;padding:.4rem;resize:none;outline:none}.ata:focus{border-color:var(--gd)}.ata::placeholder{color:var(--mt)}
+.air{margin-top:.4rem;font-size:.65rem;color:var(--dim);line-height:1.5;padding:.45rem;background:rgba(200,164,74,.04);border-radius:6px;border-left:2px solid var(--gd);display:none}.air.show{display:block}
+.tc{background:var(--card);border:1px solid var(--bdr);border-radius:10px;padding:.9rem;text-align:center}
+.tq{font-family:var(--fd);font-size:.88rem;font-weight:700;color:var(--gd);margin-bottom:.5rem;line-height:1.3}
+.to{padding:.45rem .6rem;background:rgba(255,255,255,.03);border:1px solid var(--bdr);border-radius:6px;color:var(--fg);font-size:.7rem;cursor:pointer;transition:all .2s;text-align:left;margin-bottom:.25rem}
+.to:hover{border-color:var(--gd)}.to.ok{border-color:#27ae60;background:rgba(39,174,96,.1);color:#5dda89}.to.no{border-color:var(--rd);background:rgba(212,74,58,.1);color:#e87060}
+@media(max-width:420px){#mapBox{height:320px}.srow{gap:1rem}}
+</style></head><body>
+<div class="app">
+<div class="hdr"><div class="logo">Scene It <em>SF</em></div><div class="tag">Every scene &middot; Every spot &middot; Only San Francisco</div></div>
+<div class="srow"><div class="st"><div class="sn">23</div><div class="sl">Films</div></div><div class="st"><div class="sn">23</div><div class="sl">Locations</div></div><div class="st"><div class="sn">75</div><div class="sl">Years</div></div><div class="st"><div class="sn">$2.4M</div><div class="sl">Permits</div></div></div>
+<div class="tabs" id="T"></div>
+<div class="W" id="W"></div>
+</div>
+<script>
+const D=[
+{t:"Dirty Harry",y:1971,loc:"555 California St",lat:37.7924,lng:-122.4038,hood:"Financial District",cast:["Clint Eastwood"],dir:"Don Siegel",fact:"Tallest on West Coast 1969\u20131972.",permit:"$18,500",pn:"3 blocks, 2 days",cam:null},
+{t:"Dirty Harry",y:1971,loc:"St. Peter & Paul Church",lat:37.8017,lng:-122.4102,hood:"North Beach",cast:["Clint Eastwood"],dir:"Don Siegel",fact:"Monroe & DiMaggio took photos here.",permit:"$12,200",pn:"Exterior, 1 day",cam:null},
+{t:"Bullitt",y:1968,loc:"Taylor St, Russian Hill",lat:37.7985,lng:-122.4127,hood:"Russian Hill",cast:["Steve McQueen"],dir:"Peter Yates",fact:"Chase: 3 weeks. Green VW Bug = continuity error.",permit:"$45,000",pn:"Streets closed 3 weeks",cam:"Officer Ray Carney (SFPD) directing traffic \u2014 not acting."},
+{t:"Mrs. Doubtfire",y:1993,loc:"2640 Steiner St",lat:37.7920,lng:-122.4370,hood:"Pacific Heights",cast:["Robin Williams"],dir:"Chris Columbus",fact:"House became a memorial after Williams\u2019 passing.",permit:"$22,000",pn:"5 days",cam:null},
+{t:"Vertigo",y:1958,loc:"Fort Point",lat:37.8107,lng:-122.4770,hood:"Presidio",cast:["James Stewart","Kim Novak"],dir:"Alfred Hitchcock",fact:"Fake bell tower via special effects.",permit:"$8,400",pn:"NPS, 3 days",cam:null},
+{t:"The Rock",y:1996,loc:"Alcatraz Island",lat:37.8267,lng:-122.4230,hood:"Alcatraz",cast:["Sean Connery","Nicolas Cage"],dir:"Michael Bay",fact:null,permit:"$95,000",pn:"NPS access",cam:null},
+{t:"Zodiac",y:2007,loc:"SF Chronicle Bldg",lat:37.7819,lng:-122.4067,hood:"SoMa",cast:["Jake Gyllenhaal"],dir:"David Fincher",fact:null,permit:"$34,000",pn:"4 days",cam:null},
+{t:"Milk",y:2008,loc:"City Hall",lat:37.7793,lng:-122.4192,hood:"Civic Center",cast:["Sean Penn"],dir:"Gus Van Sant",fact:"Dome is taller than US Capitol.",permit:"$52,000",pn:"City Hall + Castro",cam:"Supervisor Ammiano as himself."},
+{t:"Pursuit of Happyness",y:2006,loc:"Glide Memorial",lat:37.7847,lng:-122.4133,hood:"Tenderloin",cast:["Will Smith"],dir:"Gabriele Muccino",fact:null,permit:"$28,000",pn:"3 days",cam:"Rev. Cecil Williams in shelter scenes."},
+{t:"Forrest Gump",y:1994,loc:"Palace of Fine Arts",lat:37.8027,lng:-122.4491,hood:"Marina",cast:["Tom Hanks"],dir:"Robert Zemeckis",fact:"Built 1915, destroyed 1964, rebuilt 1965.",permit:"$15,000",pn:"2 days",cam:null},
+{t:"Towering Inferno",y:1974,loc:"Fairmont Hotel",lat:37.7924,lng:-122.4101,hood:"Nob Hill",cast:["Steve McQueen","Paul Newman"],dir:"John Guillermin",fact:"Hosted 1945 UN Conference.",permit:"$38,000",pn:"6 days",cam:null},
+{t:"Venom",y:2018,loc:"Embarcadero",lat:37.7909,lng:-122.3895,hood:"Embarcadero",cast:["Tom Hardy"],dir:"Ruben Fleischer",fact:null,permit:"$62,000",pn:"5 days",cam:null},
+{t:"Always Be My Maybe",y:2019,loc:"UN Plaza",lat:37.7795,lng:-122.4165,hood:"Civic Center",cast:["Ali Wong","Keanu Reeves"],dir:"Nahnatchka Khan",fact:null,permit:"$19,500",pn:"Market",cam:null},
+{t:"Ant-Man & the Wasp",y:2018,loc:"Lombard Street",lat:37.8021,lng:-122.4187,hood:"Russian Hill",cast:["Paul Rudd"],dir:"Peyton Reed",fact:null,permit:"$78,000",pn:"Major closures",cam:null},
+{t:"Inside Out",y:2015,loc:"Golden Gate Bridge",lat:37.8199,lng:-122.4783,hood:"Presidio",cast:["Amy Poehler"],dir:"Pete Docter",fact:"Pixar studied SF fog for months.",permit:"$0",pn:"Animated",cam:null},
+{t:"Last Black Man in SF",y:2019,loc:"900 Innes Ave",lat:37.7322,lng:-122.3758,hood:"Bayview",cast:["Jimmie Fails"],dir:"Joe Talbot",fact:null,permit:"$14,000",pn:"8 days",cam:null},
+{t:"Matrix Resurrections",y:2021,loc:"Market Street",lat:37.7870,lng:-122.4000,hood:"Financial District",cast:["Keanu Reeves"],dir:"Lana Wachowski",fact:null,permit:"$185,000",pn:"4 blocks, helicopters, 9 days",cam:"SFMTA officers writing real tickets on closed set."},
+{t:"Dark Passage",y:1947,loc:"1360 Montgomery",lat:37.8018,lng:-122.4044,hood:"North Beach",cast:["Humphrey Bogart"],dir:"Delmer Daves",fact:null,permit:"$3,200",pn:"1947",cam:null},
+{t:"Steve Jobs",y:2015,loc:"Columbus & Kearny",lat:37.7964,lng:-122.4049,hood:"North Beach",cast:["Michael Fassbender"],dir:"Danny Boyle",fact:null,permit:"$31,000",pn:"3 days",cam:null},
+{t:"Body Snatchers",y:1978,loc:"City Hall",lat:37.7796,lng:-122.4195,hood:"Civic Center",cast:["Donald Sutherland"],dir:"Philip Kaufman",fact:null,permit:"$16,000",pn:"2 days",cam:"Mayor Moscone visited. Staff as pod people."},
+{t:"Blue Jasmine",y:2013,loc:"Post Street",lat:37.7882,lng:-122.4056,hood:"Union Square",cast:["Cate Blanchett"],dir:"Woody Allen",fact:null,permit:"$24,000",pn:"3 days",cam:null},
+{t:"Tales of the City",y:2019,loc:"City Lights Books",lat:37.7976,lng:-122.4066,hood:"North Beach",cast:["Laura Linney"],dir:"Alan Poul",fact:null,permit:"$21,000",pn:"5 days",cam:null}
+];
+const AF=[{t:"Artificial",y:2025,status:"Post-production",dir:"Luca Guadagnino",cast:["Andrew Garfield","Monica Barbaro"],desc:"OpenAI/Sam Altman biopic. Mission District & downtown, summer 2025.",locs:[{n:"Dolores Park",lat:37.7596,lng:-122.4269},{n:"Mission District",lat:37.7599,lng:-122.4148},{n:"Downtown",lat:37.7905,lng:-122.4017}],permit:"Est. $200K+",note:"Scene in SF rebate expanded Feb 12 2026 \u2014 up to $1M."}];
+const AU=[
+{m:"Bullitt",y:1968,tag:"The most famous car chase makes zero geographic sense.",steps:[{f:"Potrero Hill",t:"North Beach",mi:3.8,s:2,mph:6840,d:"McQueen teleports in a single cut."},{f:"Russian Hill",t:"Marina",mi:0.7,s:1,mph:2520,d:"Charger leaps 6 blocks."},{f:"Marina Blvd",t:"Visitacion Valley",mi:8.2,s:3,mph:9840,d:"Same Safeway twice, then 8 mi south."},{f:"Visitacion Valley",t:"Daly City",mi:3.1,s:2,mph:5580,d:"Finale outside city limits."}]},
+{m:"Ant-Man & the Wasp",y:2018,tag:"Marvel discovers SF neighborhoods aren\u2019t adjacent.",steps:[{f:"Lombard St",t:"Embarcadero",mi:2.1,s:3,mph:2520,d:"Turns on Lombard, instantly at Embarcadero."},{f:"Fisherman\u2019s Wharf",t:"Twin Peaks",mi:4.5,s:4,mph:4050,d:"Unconnected neighborhoods."}]},
+{m:"The Rock",y:1996,tag:"Humvee treats SF like a 3-block city.",steps:[{f:"Nob Hill",t:"Marina Green",mi:2.8,s:5,mph:2016,d:"Hills flattened out of respect."},{f:"Embarcadero",t:"Wharf",mi:1.5,s:2,mph:2700,d:"Cable car? 3+ transfers."}]},
+{m:"Venom",y:2018,tag:"Symbiote learned teleportation first.",steps:[{f:"Edinburgh Castle",t:"Embarcadero",mi:2.4,s:4,mph:2160,d:"Tenderloin to waterfront in seconds."}]}];
+const WK=[
+{em:"\uD83D\uDD2B",t:"Dirty Harry\u2019s Justice Trail",d:"FiDi to North Beach.",dist:"2.4 mi",time:"45 min",spd:"To match Callahan: 38 mph.",stops:[{m:"Dirty Harry",l:"555 California"},{m:"Dirty Harry",l:"Washington Sq"},{m:"Zodiac",l:"Chronicle Bldg"}]},
+{em:"\uD83D\uDC95",t:"90s Rom-Com Walk",d:"Robin Williams in drag to Ali Wong.",dist:"1.8 mi",time:"35 min",spd:"Doubtfire ran this in heels. 27-sec mile.",stops:[{m:"Mrs. Doubtfire",l:"2640 Steiner"},{m:"Always Be My Maybe",l:"UN Plaza"},{m:"Blue Jasmine",l:"Post St"}]},
+{em:"\uD83E\uDDB8",t:"Action Hero Chase",d:"Bay views + explosions.",dist:"2.1 mi",time:"40 min",spd:"Cage: 45 sec. 168 mph in a Humvee.",stops:[{m:"Bullitt",l:"Taylor St"},{m:"Ant-Man",l:"Lombard"},{m:"Venom",l:"Embarcadero"}]},
+{em:"\uD83C\uDFAC",t:"Golden Age Noir",d:"Bogart. Bacall. Fog. Fedoras.",dist:"1.9 mi",time:"35 min",spd:"Bogart: 1.8 mph. Slowly.",stops:[{m:"Dark Passage",l:"1360 Montgomery"},{m:"Vertigo",l:"Fort Point"},{m:"Inferno",l:"Fairmont"}]},
+{em:"\uD83C\uDF09",t:"Is This Really SF?",d:"Where Hollywood got it wrong.",dist:"3.1 mi",time:"55 min",spd:"Matrix closed 4 blocks for 9 days.",stops:[{m:"Matrix",l:"Market St"},{m:"Ant-Man",l:"Lombard"},{m:"Inside Out",l:"GG Bridge"}]}];
+const TR=[{q:"Eastwood film at Bank of America?",o:["Dirty Harry","Unforgiven","Gran Torino","In the Line of Fire"],a:0},{q:"Tom Hanks at Palace of Fine Arts?",o:["Cast Away","Philadelphia","Forrest Gump","Green Mile"],a:2},{q:"Fairmont Hotel fire scene?",o:["Towering Inferno","San Andreas","Earthquake","Backdraft"],a:0},{q:"Bullitt Marina\u2192Vis Valley?",o:["2 mi","5 mi","8 mi","12 mi"],a:2},{q:"Bullitt continuity error car?",o:["Red Corvette","Green VW Bug","Yellow Taxi","Blue Chevy"],a:1},{q:"Mrs. Doubtfire house street?",o:["Lombard","Haight","Steiner","Fillmore"],a:2},{q:"Hitchcock at Fort Point?",o:["Psycho","Rear Window","Birds","Vertigo"],a:3},{q:"Sean Penn as Milk?",o:["Transamerica","City Hall","Ferry Bldg","Palace Hotel"],a:1},{q:"Keanu 2019 rom-com?",o:["To All Boys","Set It Up","Always Be My Maybe","Someone Great"],a:2},{q:"Largest permit ($185K)?",o:["Venom","The Rock","Matrix Resurrections","Ant-Man"],a:2},{q:"Bullitt teleport speed?",o:["2,520 MPH","5,580 MPH","9,840 MPH","15,000 MPH"],a:2},{q:"Pixar $0 permits?",o:["Cars","Up","Inside Out","Monsters Inc"],a:2}];
+let tab='explore',flt='All',src='',mp=null,mks=[],tI=0,tS=0,tD=false,showLive=false;
+const hoods=[...new Set(D.filter(d=>d.hood).map(d=>d.hood))].sort();
+const TD=[{id:'explore',ic:'\uD83C\uDFAC',lb:'Explore'},{id:'audit',ic:'\uD83D\uDD0D',lb:'Audits'},{id:'walks',ic:'\uD83D\uDEB6',lb:'Walks'},{id:'ai',ic:'\uD83E\uDD16',lb:'AI'},{id:'trivia',ic:'\uD83C\uDFAF',lb:'Trivia'}];
+
+function iT(){document.getElementById('T').innerHTML=TD.map(t=>`<button class="tb${t.id===tab?' on':''}" onclick="tab='${t.id}';iT();go()">${t.ic} ${t.lb}</button>`).join('')}
+function go(){const w=document.getElementById('W');w.scrollTop=0;if(tab==='explore')rE(w);else if(tab==='audit')rA(w);else if(tab==='walks')rW(w);else if(tab==='ai')rI(w);else rT(w)}
+
+function cI(isCam){
+  const c=isCam?'%23d44a3a':'%23c8a44a';
+  return L.divIcon({className:'',iconSize:[24,24],iconAnchor:[12,12],popupAnchor:[0,-14],
+    html:'<svg width="24" height="24" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" fill="'+decodeURIComponent(c)+'" stroke="#fff" stroke-width="2"/><rect x="6" y="9" width="8" height="6" rx="1" fill="#fff" opacity="0.9"/><polygon points="14,10 18,8 18,16 14,14" fill="#fff" opacity="0.9"/></svg>'})
+}
+function lI(){
+  return L.divIcon({className:'',iconSize:[28,28],iconAnchor:[14,14],popupAnchor:[0,-14],
+    html:'<svg width="28" height="28" viewBox="0 0 28 28"><circle cx="14" cy="14" r="11" fill="#d44a3a" stroke="#fff" stroke-width="2"/><circle cx="14" cy="14" r="11" fill="none" stroke="#d44a3a" stroke-width="1.5" opacity="0.4"><animate attributeName="r" from="11" to="18" dur="1.5s" repeatCount="indefinite"/><animate attributeName="opacity" from="0.5" to="0" dur="1.5s" repeatCount="indefinite"/></circle><text x="14" y="17" text-anchor="middle" fill="#fff" font-size="7" font-weight="bold" font-family="DM Sans,sans-serif">LIVE</text></svg>'})
+}
+
+function pH(d){return `<div class="pop"><div class="pt">${d.t}<span class="py">${d.y}</span></div><div class="pl">\uD83C\uDFA5 ${d.loc}</div><div class="pc">${d.cast.join(', ')} \u00B7 ${d.dir}</div>${d.fact?`<div class="pf">${d.fact}</div>`:''}${d.permit?`<div class="pp">\uD83D\uDCB0 ${d.permit} \u2014 ${d.pn}</div>`:''}${d.cam?`<div class="pe">\uD83C\uDFAD ${d.cam}</div>`:''}<div class="ph">${d.hood||''}</div><div class="svr" onmousedown="sS(event,this)" ontouchstart="sS(event,this)"><div class="svs svr2"><span class="svlb">Now</span><div class="svtx">\uD83D\uDCF7</div></div><div class="svs svl" style="width:50%"><span class="svlb">Cinema</span><div class="svtx">\uD83C\uDFAC ${d.t}</div></div><div class="svd" style="left:50%"></div></div></div>`}
+
+function sS(e,el){e.preventDefault();const mv=ev=>{const r=el.getBoundingClientRect();const cx=ev.touches?ev.touches[0].clientX:ev.clientX;let p=((cx-r.left)/r.width)*100;p=Math.max(5,Math.min(95,p));el.querySelector('.svl').style.width=p+'%';el.querySelector('.svd').style.left=p+'%'};const up=()=>{document.removeEventListener('mousemove',mv);document.removeEventListener('mouseup',up);document.removeEventListener('touchmove',mv);document.removeEventListener('touchend',up)};document.addEventListener('mousemove',mv);document.addEventListener('mouseup',up);document.addEventListener('touchmove',mv);document.addEventListener('touchend',up)}
+
+function rE(el){
+  const ch=['All',...hoods].map(h=>`<button class="ch ${flt===h?'on':''}" onclick="flt='${h.replace(/'/g,"\\'")}';uM()">${h}</button>`).join('');
+  el.innerHTML=`<div class="sr"><input type="text" placeholder="Search movies, actors, locations..." value="${src}" oninput="src=this.value;uM()"></div><div class="chips">${ch}</div><div class="lt${showLive?' on':''}" onclick="showLive=!showLive;rE(document.getElementById('W'))"><div class="ld"></div><div><div class="ltx">${showLive?'\uD83D\uDD34 Active Filming':'Active Filming'}</div><div class="lts">${showLive?'Showing active productions':'Tap to show active permits'}</div></div></div>${showLive?AF.map(f=>`<div class="lb"><div class="lbg">\uD83D\uDD34 LIVE</div><h4>${f.t} (${f.y})</h4><p>${f.dir} \u00B7 ${f.cast.join(', ')}</p><p>${f.desc}</p><p style="color:var(--gd);margin-top:.2rem">\uD83D\uDCB0 ${f.permit} \u00B7 ${f.note}</p></div>`).join(''):''}<button class="btn br" onclick="rnd()">\uD83C\uDFB2 Random Scene</button><div id="mapBox"></div><div class="cnt" id="cL"></div>`;
+  setTimeout(()=>{if(mp){mp.remove();mp=null}const b=document.getElementById('mapBox');if(!b)return;mp=L.map('mapBox',{zoomControl:true,attributionControl:false}).setView([37.76,-122.44],12);L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',{maxZoom:19}).addTo(mp);uM()},50);
+}
+function uM(){
+  if(!mp)return;mks.forEach(m=>mp.removeLayer(m));mks=[];
+  const f=D.filter(d=>{if(!d.lat)return false;const mh=flt==='All'||d.hood===flt;const ms=!src||d.t.toLowerCase().includes(src.toLowerCase())||d.loc.toLowerCase().includes(src.toLowerCase())||d.cast.some(a=>a.toLowerCase().includes(src.toLowerCase()));return mh&&ms});
+  f.forEach(d=>{const m=L.marker([d.lat,d.lng],{icon:cI(!!d.cam)}).addTo(mp);m.bindPopup(pH(d),{maxWidth:280});mks.push(m)});
+  if(showLive){AF.forEach(af=>{af.locs.forEach(loc=>{const m=L.marker([loc.lat,loc.lng],{icon:lI()}).addTo(mp);m.bindPopup(`<div class="pop"><div class="pt" style="color:var(--rd)">${af.t}<span class="py">${af.y}</span></div><div class="pl" style="color:var(--rd)">\uD83D\uDD34 ${loc.n}</div><div class="pc">${af.dir} \u00B7 ${af.cast.join(', ')}</div><div class="pp" style="color:var(--rd)">${af.status}</div></div>`);mks.push(m)})})}
+  const cl=document.getElementById('cL');if(cl)cl.textContent=`${f.length} scenes`+(showLive?` + ${AF.reduce((s,a)=>s+a.locs.length,0)} active`:'');
+}
+function rnd(){const c=D.filter(d=>d.lat);const p=c[Math.floor(Math.random()*c.length)];mp.flyTo([p.lat,p.lng],16,{duration:1});setTimeout(()=>{const m=mks.find(mk=>{const ll=mk.getLatLng();return Math.abs(ll.lat-p.lat)<.001&&Math.abs(ll.lng-p.lng)<.001});if(m)m.openPopup()},1100)}
+function rA(el){const tt=AU.reduce((s,a)=>s+a.steps.length,0);const mx=Math.max(...AU.flatMap(a=>a.steps.map(s=>s.mph)));el.innerHTML=`<div class="sc">\uD83D\uDD0D Geographic Integrity Audits</div><div class="ss">Hollywood thinks SF is 3 blocks wide.</div><div style="display:grid;grid-template-columns:1fr 1fr;gap:.4rem;margin-bottom:.8rem"><div style="background:var(--card);border:1px solid var(--bdr);border-radius:8px;padding:.6rem;text-align:center"><div class="sn">${tt}</div><div class="sl">Teleportations</div></div><div style="background:var(--card);border:1px solid var(--bdr);border-radius:8px;padding:.6rem;text-align:center"><div class="sn">${mx.toLocaleString()}</div><div class="sl">Peak MPH</div></div></div>${AU.map((a,i)=>`<div class="ac" id="a${i}"><div class="aH" onclick="document.getElementById('a${i}').classList.toggle('open')"><div class="aM">${a.m}<span class="aY">${a.y}</span></div><div class="aTag">${a.tag}</div><div class="aBg">\u26A1 ${a.steps.length} impossible cut${a.steps.length>1?'s':''}</div></div><div class="aB">${a.steps.map(s=>`<div class="aS"><div class="aR"><strong>${s.f}</strong> \u2192 <strong>${s.t}</strong></div><div class="aX"><h4>\u26A1 IMPOSSIBLE</h4><p>${s.d}</p><div style="margin-top:.3rem"><div class="aXl">${s.mi} mi \u00B7 ${s.s}s</div><div class="aXn">${s.mph.toLocaleString()} MPH</div><div class="aXl">Required speed</div></div></div></div>`).join('')}</div></div>`).join('')}`}
+
+function rW(el){el.innerHTML=`<div class="sc">\uD83D\uDEB6 Main Character Walking Tours</div><div class="ss">Speed comparisons to remind you: not an action hero.</div>${WK.map((w,i)=>`<div class="wc" id="w${i}" onclick="document.getElementById('w${i}').classList.toggle('open')"><div class="we">${w.em}</div><div class="wt">${w.t}</div><div class="wd">${w.d}</div><div class="wm"><span>\uD83D\uDCCD ${w.stops.length} stops</span><span>\uD83D\uDEB6 ${w.dist}</span><span>\u23F1 ${w.time}</span></div><div class="wj">\uD83C\uDFCE\uFE0F ${w.spd}</div><div class="wS">${w.stops.map((s,j)=>`<div class="ws"><div class="wn">${j+1}</div><div><div class="wMv">${s.m}</div><div class="wLc">${s.l}</div></div></div>`).join('')}</div></div>`).join('')}`}
+
+function rI(el){const V=['\uD83C\uDF2B\uFE0F Foggy noir','\uD83C\uDF09 Golden hour','\uD83C\uDFD9\uFE0F Chase','\uD83C\uDF03 Thriller','\u2600\uFE0F Indie','\uD83C\uDFAD Political'];el.innerHTML=`<div class="sc">\uD83E\uDD16 AI Scene Advisor</div><div class="ss">Describe any SF spot for a cinematic match.</div><div class="aib"><div class="ait">What should be filmed here?</div><div class="aid">Describe a vibe, a view, a mood.</div><textarea class="ata" id="aIn" placeholder="A foggy alley in Chinatown at 2am..."></textarea><button class="btn bg" style="margin-top:.4rem" onclick="runAI()">\uD83C\uDFAC Analyze</button><div class="air" id="aR"></div></div><div class="aib"><div class="ait">\uD83C\uDFAF Quick Vibe Match</div><div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:.25rem">${V.map(v=>`<button class="ch" onclick="qV('${v}')" style="font-size:.6rem;padding:.25rem .55rem">${v}</button>`).join('')}</div><div class="air" id="qR"></div></div>`}
+function runAI(){const inp=document.getElementById('aIn').value.trim();if(!inp)return;const r=document.getElementById('aR');r.className='air show';r.innerHTML='\uD83C\uDFAC Analyzing...';setTimeout(()=>{const l=inp.toLowerCase();let x;if(l.includes('fog')||l.includes('noir')||l.includes('dark'))x='<strong>Vibe: Neo-Noir</strong><br><br>Fincher territory. <em>Zodiac</em> (2007).<br><br><strong>Nearby:</strong> Dark Passage (1947), Zodiac';else if(l.includes('bridge')||l.includes('sunset'))x='<strong>Vibe: Golden Hour</strong><br><br>Hitchcock invented this in <em>Vertigo</em>.<br><br><strong>Nearby:</strong> Forrest Gump (1994)';else if(l.includes('chase')||l.includes('hill'))x='<strong>Vibe: High-Octane</strong><br><br>McQueen started it. Hills = effects.<br><br><strong>Nearby:</strong> Bullitt (1968), The Rock';else if(l.includes('mission')||l.includes('indie'))x='<strong>Vibe: Sundance</strong><br><br><em>Last Black Man in SF</em> = poetry.';else x='<strong>Vibe: Classic SF</strong><br>75 years of film echo here.<br><strong>Nearby:</strong> '+D.slice(0,3).map(d=>d.t+' ('+d.y+')').join(', ');r.innerHTML=x},700)}
+function qV(v){const r=document.getElementById('qR');r.className='air show';const m={'\uD83C\uDF2B\uFE0F Foggy noir':'<strong>Zodiac (2007)</strong> \u2014 Fincher waited for real fog.','\uD83C\uDF09 Golden hour':'<strong>Vertigo (1958)</strong> \u2014 Hitchcock at the bridge.','\uD83C\uDFD9\uFE0F Chase':'<strong>Bullitt (1968)</strong> \u2014 9,840 MPH impossible physics.','\uD83C\uDF03 Thriller':'<strong>Dark Passage (1947)</strong> \u2014 Noir was made for SF.','\u2600\uFE0F Indie':'<strong>Last Black Man in SF</strong> \u2014 Won Sundance.','\uD83C\uDFAD Political':'<strong>Milk (2008)</strong> \u2014 City Hall is a character.'};r.innerHTML=m[v]||''}
+
+function rT(el){const q=TR[tI];el.innerHTML=`<div style="text-align:center;margin-bottom:.5rem"><div style="font-size:.55rem;color:var(--dim);text-transform:uppercase;letter-spacing:.12em">Q ${tI+1} / ${TR.length}</div><div style="font-family:var(--fd);font-size:1.3rem;color:var(--gd);margin-top:.05rem">Score: ${tS}</div></div><div class="tc"><div class="tq">${q.q}</div>${q.o.map((o,i)=>`<div class="to" id="t${i}" onclick="aT(${i})">${o}</div>`).join('')}<div id="tR" style="margin-top:.4rem;font-size:.75rem;font-weight:600;min-height:1rem"></div></div>${tD?`<button class="btn bo" onclick="nT()" style="margin-top:.4rem">${tI<TR.length-1?'Next \u2192':'Final Score'}</button>`:''}`}
+function aT(s){if(tD)return;tD=true;const q=TR[tI],r=document.getElementById('tR');if(s===q.a){tS++;document.getElementById('t'+s).classList.add('ok');r.innerHTML='<span style="color:#5dda89">\uD83C\uDFAC Correct!</span>'}else{document.getElementById('t'+s).classList.add('no');document.getElementById('t'+q.a).classList.add('ok');r.innerHTML='<span style="color:var(--rd)">\u2716 '+q.o[q.a]+'</span>'}go()}
+function nT(){if(tI<TR.length-1){tI++;tD=false;go()}else{const w=document.getElementById('W');const p=Math.round(tS/TR.length*100);const m=p===100?'Perfect. \uD83C\uDFC6':p>=75?'Impressive. \uD83C\uDFAC':p>=50?'Decent. \uD83C\uDF7F':'Try the Walks.';w.innerHTML=`<div class="tc" style="padding:1.5rem"><div style="font-size:2rem;margin-bottom:.3rem">\uD83C\uDFAC</div><div class="tq" style="font-size:1.1rem">${tS}/${TR.length}</div><div style="font-size:.75rem;color:var(--dim);margin-top:.2rem">${m}</div><button class="btn bo" onclick="tI=0;tS=0;tD=false;go()" style="margin-top:.8rem">Play Again</button></div>`}}
+iT();go();
+</script></body></html>
